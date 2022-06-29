@@ -7,10 +7,6 @@
 
 Tools for running OCR against files stored in S3
 
-## Project status
-
-This is an **alpha** tool: it has only been used for a single project, and does not yet have automated tests.
-
 ## Installation
 
 Install this tool using `pip`:
