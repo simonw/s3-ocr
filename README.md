@@ -7,6 +7,10 @@
 
 Tools for running OCR against files stored in S3
 
+## Project status
+
+This is an **alpha** tool: it has only been used for a single project, and does not yet have automated tests.
+
 ## Installation
 
 Install this tool using `pip`:
@@ -57,9 +61,35 @@ The `s3-ocr status <bucket-name>` command shows a rough indication of progress t
 ```
 It compares the jobs that have been submitted, based on `.s3-ocr.json` files, to the jobs that have their results written to the `textract-output/` folder.
 
-## Not yet implemented
+## Creating a SQLite index of your OCR results
 
-- A command to retrieve the OCR results and load them into a searchable SQLite database table. [#2](https://github.com/simonw/s3-ocr/issues/2)
+The `s3-ocr index <database_file> <bucket>` command creates a SQLite database contaning the results of the OCR, and configure SQLite full-text search for the text:
+
+```
+% s3-ocr index index.db sfms-history
+Fetching job details  [####################################]  100%
+Populating pages table  [####################----------------]   55%  00:03:18
+```
+The schema of the resulting database looks like this (excluding the FTS tables):
+```sql
+CREATE TABLE [pages] (
+   [path] TEXT,
+   [page] INTEGER,
+   [folder] TEXT,
+   [text] TEXT,
+   PRIMARY KEY ([path], [page])
+);
+CREATE TABLE [ocr_jobs] (
+   [key] TEXT PRIMARY KEY,
+   [job_id] TEXT,
+   [etag] TEXT,
+   [s3_ocr_etag] TEXT
+);
+CREATE TABLE [fetched_jobs] (
+   [job_id] TEXT PRIMARY KEY
+);
+```
+The database is designed to be used with [Datasette](https://datasette.io).
 
 ## Development
 
