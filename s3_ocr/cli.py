@@ -89,7 +89,7 @@ def cli():
 @click.argument("bucket")
 @common_boto3_options
 def start(bucket, **boto_options):
-    "Start OCR tasks for all files in this bucket"
+    "Start OCR tasks for PDF files in an S3 bucket"
     s3 = make_client("s3", **boto_options)
     textract = make_client("textract", **boto_options)
     items = list(paginate(s3, "list_objects_v2", "Contents", Bucket=bucket))
@@ -167,7 +167,7 @@ def status(bucket, **boto_options):
 @click.argument("bucket")
 @common_boto3_options
 def index(database, bucket, **boto_options):
-    "Show status of OCR jobs for a bucket"
+    "Create a SQLite database with OCR results for files in a bucket"
     db = sqlite_utils.Database(database)
     if not db["pages"].exists():
         db["pages"].create(

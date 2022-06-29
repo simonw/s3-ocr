@@ -25,6 +25,8 @@ You can start the process running like this:
 
 OCR can take some time. The results of the OCR will be stored in `textract-output` in your bucket.
 
+### s3-ocr start --help
+
 <!-- [[[cog
 import cog
 from s3_ocr import cli
@@ -39,7 +41,7 @@ cog.out(
 ```
 Usage: s3-ocr start [OPTIONS] BUCKET
 
-  Start OCR tasks for all files in this bucket
+  Start OCR tasks for PDF files in an S3 bucket
 
 Options:
   --access-key TEXT     AWS access key ID
@@ -83,6 +85,8 @@ The `s3-ocr status <bucket-name>` command shows a rough indication of progress t
 153 complete out of 532 jobs
 ```
 It compares the jobs that have been submitted, based on `.s3-ocr.json` files, to the jobs that have their results written to the `textract-output/` folder.
+
+### s3-ocr status --help
 
 <!-- [[[cog
 result = runner.invoke(cli.cli, ["status", "--help"])
@@ -137,6 +141,8 @@ CREATE TABLE [fetched_jobs] (
 ```
 The database is designed to be used with [Datasette](https://datasette.io).
 
+### s3-ocr index --help
+
 <!-- [[[cog
 result = runner.invoke(cli.cli, ["index", "--help"])
 help = result.output.replace("Usage: cli", "Usage: s3-ocr")
@@ -147,7 +153,7 @@ cog.out(
 ```
 Usage: s3-ocr index [OPTIONS] DATABASE BUCKET
 
-  Show status of OCR jobs for a bucket
+  Create a SQLite database with OCR results for files in a bucket
 
 Options:
   --access-key TEXT     AWS access key ID
