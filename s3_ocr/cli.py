@@ -180,6 +180,77 @@ def status(bucket, **boto_options):
 
 
 @cli.command
+@click.argument("bucket")
+@click.argument("key")
+@click.option(
+    "-c", "--combine", type=click.File("w"), help="Write combined JSON to file"
+)
+@common_boto3_options
+def fetch(bucket, key, combine, **boto_options):
+    """
+    Fetch the OCR results for a specified file
+
+        s3-ocr fetch name-of-bucket path/to/key.pdf
+
+    This will save files in the current directory called things like
+
+        a806e67e504fc15f...48314e-1.json
+        a806e67e504fc15f...48314e-2.json
+
+    To combine these together into a single JSON file with a specified
+    name, use:
+
+        s3-ocr fetch name-of-bucket path/to/key.pdf --combine output.json
+
+    Use "--output -" to print the combined JSON to standard output instead.
+    """
+    s3 = make_client("s3", **boto_options)
+
+    items = list(paginate(s3, "list_objects_v2", "Contents", Bucket=bucket, Prefix=key))
+    keys_with_s3_ocr_files = [
+        strip_ocr_json(item["Key"])
+        for item in items
+        if item["Key"].endswith(S3_OCR_JSON)
+    ]
+    if not keys_with_s3_ocr_files:
+        raise click.ClickException("Key could not be found in bucket: {}".format(key))
+    # Read that file to find the job ID
+    try:
+        job_id = json.loads(
+            s3.get_object(Bucket=bucket, Key=keys_with_s3_ocr_files[0] + S3_OCR_JSON)[
+                "Body"
+            ].read()
+        )["job_id"]
+    except Exception as e:
+        raise click.ClickException("Could not find job_id for key")
+    result_items = [
+        item
+        for item in paginate(
+            s3,
+            "list_objects_v2",
+            "Contents",
+            Bucket=bucket,
+            Prefix="textract-output/{}".format(job_id),
+        )
+        if ".s3_access_check" not in item["Key"]
+    ]
+    if not combine:
+        for item in result_items:
+            filename = (
+                item["Key"].replace("textract-output/", "").replace("/", "-") + ".json"
+            )
+            s3.download_file(bucket, item["Key"], filename)
+    else:
+        combined = []
+        for item in result_items:
+            blocks = json.loads(
+                s3.get_object(Bucket=bucket, Key=item["Key"])["Body"].read()
+            )["Blocks"]
+            combined.extend(blocks)
+        combine.write(json.dumps({"Blocks": combined}))
+
+
+@cli.command
 @click.argument(
     "database",
     type=click.Path(file_okay=True, dir_okay=False, allow_dash=False),

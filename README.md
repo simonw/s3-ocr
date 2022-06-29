@@ -13,7 +13,7 @@ Install this tool using `pip`:
 
     pip install s3-ocr
 
-## Starting OCR against every PDF in a bucket
+## Starting OCR against PDFs in a bucket
 
 The `start` command loops through every PDF file in a bucket (every file ending in `.pdf`) and submits it to [Textract](https://aws.amazon.com/textract/) for OCR processing.
 
@@ -65,28 +65,6 @@ Options:
 ```
 <!-- [[[end]]] -->
 
-## Changes made to your bucket
-
-To keep track of which files have been submitted for processing, `s3-ocr` will create a JSON file for every file that it adds to the OCR queue.
-
-This file will be called:
-
-    path-to-file/name-of-file.pdf.s3-ocr.json
-
-Each of these JSON files contains data that looks like this:
-
-```json
-{
-  "job_id": "a34eb4e8dc7e70aa9668f7272aa403e85997364199a654422340bc5ada43affe",
-  "etag": "\"b0c77472e15500347ebf46032a454e8e\""
-}
-```
-The recorded `job_id` can be used later to associate the file with the results of the OCR task in `textract-output/`.
-
-The `etag` is the ETag of the S3 object at the time it was submitted. This can be used later to determine if a file has changed since it last had OCR run against it.
-
-This design for the tool, with the `.s3-ocr.json` files tracking jobs that have been submitted, means that it is safe to run `s3-ocr start` against the same bucket multiple times without the risk of starting duplicate OCR jobs.
-
 ## Checking status
 
 The `s3-ocr status <bucket-name>` command shows a rough indication of progress through the tasks:
@@ -121,6 +99,102 @@ Options:
 
 ```
 <!-- [[[end]]] -->
+
+## Fetching the results
+
+Once an OCR job has completed you can download the resulting JSON using the `fetch` command:
+
+    s3-ocr fetch name-of-bucket path/to/file.pdf
+
+This will save files in the current directory with names like this:
+
+- `4d9b5cf580e761fdb16fd24edce14737ebc562972526ef6617554adfa11d6038-1.json`
+- `4d9b5cf580e761fdb16fd24edce14737ebc562972526ef6617554adfa11d6038-2.json`
+
+The number of files will vary depending on the length of the document.
+
+If you don't want separate files you can combine them together using the `-c/--combine` option:
+
+    s3-ocr fetch name-of-bucket path/to/file.pdf --combine output.json
+
+The `output.json` file will then contain data that looks something like this:
+
+```json
+{
+  "Blocks": [
+    {
+      "BlockType": "PAGE",
+      "Geometry": {...}
+      "Page": 1,
+      ...
+    },
+    {
+      "BlockType": "LINE",
+      "Page": 1,
+      ...
+      "Text": "Barry",
+    },
+```
+### s3-ocr fetch --help
+
+<!-- [[[cog
+result = runner.invoke(cli.cli, ["fetch", "--help"])
+help = result.output.replace("Usage: cli", "Usage: s3-ocr")
+cog.out(
+    "```\n{}\n```".format(help)
+)
+]]] -->
+```
+Usage: s3-ocr fetch [OPTIONS] BUCKET KEY
+
+  Fetch the OCR results for a specified file
+
+      s3-ocr fetch name-of-bucket path/to/key.pdf
+
+  This will save files in the current directory called things like
+
+      a806e67e504fc15f...48314e-1.json     a806e67e504fc15f...48314e-2.json
+
+  To combine these together into a single JSON file with a specified name, use:
+
+      s3-ocr fetch name-of-bucket path/to/key.pdf --combine output.json
+
+  Use "--output -" to print the combined JSON to standard output instead.
+
+Options:
+  -c, --combine FILENAME  Write combined JSON to file
+  --access-key TEXT       AWS access key ID
+  --secret-key TEXT       AWS secret access key
+  --session-token TEXT    AWS session token
+  --endpoint-url TEXT     Custom endpoint URL
+  -a, --auth FILENAME     Path to JSON/INI file containing credentials
+  --help                  Show this message and exit.
+
+```
+<!-- [[[end]]] -->
+
+
+## Changes made to your bucket
+
+To keep track of which files have been submitted for processing, `s3-ocr` will create a JSON file for every file that it adds to the OCR queue.
+
+This file will be called:
+
+    path-to-file/name-of-file.pdf.s3-ocr.json
+
+Each of these JSON files contains data that looks like this:
+
+```json
+{
+  "job_id": "a34eb4e8dc7e70aa9668f7272aa403e85997364199a654422340bc5ada43affe",
+  "etag": "\"b0c77472e15500347ebf46032a454e8e\""
+}
+```
+The recorded `job_id` can be used later to associate the file with the results of the OCR task in `textract-output/`.
+
+The `etag` is the ETag of the S3 object at the time it was submitted. This can be used later to determine if a file has changed since it last had OCR run against it.
+
+This design for the tool, with the `.s3-ocr.json` files tracking jobs that have been submitted, means that it is safe to run `s3-ocr start` against the same bucket multiple times without the risk of starting duplicate OCR jobs.
 
 ## Creating a SQLite index of your OCR results
 
