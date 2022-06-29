@@ -17,7 +17,7 @@ Install this tool using `pip`:
 
     pip install s3-ocr
 
-## Usage
+## Starting OCR against every PDF in a bucket
 
 The `start` command loops through every PDF file in a bucket (every file ending in `.pdf`) and submits it to [Textract](https://aws.amazon.com/textract/) for OCR processing.
 
@@ -28,6 +28,33 @@ You can start the process running like this:
     s3-ocr start name-of-your-bucket
 
 OCR can take some time. The results of the OCR will be stored in `textract-output` in your bucket.
+
+<!-- [[[cog
+import cog
+from s3_ocr import cli
+from click.testing import CliRunner
+runner = CliRunner()
+result = runner.invoke(cli.cli, ["start", "--help"])
+help = result.output.replace("Usage: cli", "Usage: s3-ocr")
+cog.out(
+    "```\n{}\n```".format(help)
+)
+]]] -->
+```
+Usage: s3-ocr start [OPTIONS] BUCKET
+
+  Start OCR tasks for all files in this bucket
+
+Options:
+  --access-key TEXT     AWS access key ID
+  --secret-key TEXT     AWS secret access key
+  --session-token TEXT  AWS session token
+  --endpoint-url TEXT   Custom endpoint URL
+  -a, --auth FILENAME   Path to JSON/INI file containing credentials
+  --help                Show this message and exit.
+
+```
+<!-- [[[end]]] -->
 
 ## Changes made to your bucket
 
@@ -61,6 +88,29 @@ The `s3-ocr status <bucket-name>` command shows a rough indication of progress t
 ```
 It compares the jobs that have been submitted, based on `.s3-ocr.json` files, to the jobs that have their results written to the `textract-output/` folder.
 
+<!-- [[[cog
+result = runner.invoke(cli.cli, ["status", "--help"])
+help = result.output.replace("Usage: cli", "Usage: s3-ocr")
+cog.out(
+    "```\n{}\n```".format(help)
+)
+]]] -->
+```
+Usage: s3-ocr status [OPTIONS] BUCKET
+
+  Show status of OCR jobs for a bucket
+
+Options:
+  --access-key TEXT     AWS access key ID
+  --secret-key TEXT     AWS secret access key
+  --session-token TEXT  AWS session token
+  --endpoint-url TEXT   Custom endpoint URL
+  -a, --auth FILENAME   Path to JSON/INI file containing credentials
+  --help                Show this message and exit.
+
+```
+<!-- [[[end]]] -->
+
 ## Creating a SQLite index of your OCR results
 
 The `s3-ocr index <database_file> <bucket>` command creates a SQLite database contaning the results of the OCR, and configure SQLite full-text search for the text:
@@ -91,6 +141,29 @@ CREATE TABLE [fetched_jobs] (
 ```
 The database is designed to be used with [Datasette](https://datasette.io).
 
+<!-- [[[cog
+result = runner.invoke(cli.cli, ["index", "--help"])
+help = result.output.replace("Usage: cli", "Usage: s3-ocr")
+cog.out(
+    "```\n{}\n```".format(help)
+)
+]]] -->
+```
+Usage: s3-ocr index [OPTIONS] DATABASE BUCKET
+
+  Show status of OCR jobs for a bucket
+
+Options:
+  --access-key TEXT     AWS access key ID
+  --secret-key TEXT     AWS secret access key
+  --session-token TEXT  AWS session token
+  --endpoint-url TEXT   Custom endpoint URL
+  -a, --auth FILENAME   Path to JSON/INI file containing credentials
+  --help                Show this message and exit.
+
+```
+<!-- [[[end]]] -->
+
 ## Development
 
 To contribute to this tool, first checkout the code. Then create a new virtual environment:
@@ -106,3 +179,7 @@ Now install the dependencies and test dependencies:
 To run the tests:
 
     pytest
+
+To regenerate the README file with the latest `--help`:
+
+    cog -r README.md

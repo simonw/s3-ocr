@@ -32,6 +32,6 @@ setup(
         s3-ocr=s3_ocr.cli:cli
     """,
     install_requires=["click", "boto3", "sqlite-utils"],
-    extras_require={"test": ["pytest"]},
+    extras_require={"test": ["pytest", "cogapp"]},
     python_requires=">=3.7",
 )
