@@ -59,7 +59,7 @@ It compares the jobs that have been submitted, based on `.s3-ocr.json` files, to
 
 ## Not yet implemented
 
-- A command to retrieve the OCR results and load them into a searchable SQLite database table.
+- A command to retrieve the OCR results and load them into a searchable SQLite database table. [#2](https://github.com/simonw/s3-ocr/issues/2)
 
 ## Development
 
