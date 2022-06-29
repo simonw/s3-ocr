@@ -214,7 +214,11 @@ def index(database, bucket, **boto_options):
         for item in items
         if item["Key"].startswith("textract-output")
     }
-    job_ids_in_ocr_jobs = {r["job_id"] for r in db.query("SELECT job_id FROM ocr_jobs")}
+    job_ids_in_ocr_jobs = set()
+    if db["ocr_jobs"].exists():
+        job_ids_in_ocr_jobs = {
+            r["job_id"] for r in db.query("SELECT job_id FROM ocr_jobs")
+        }
     # Just fetch the ones that are not yet recorded as fetched in our database
     # AND that are referenced from the ocr_jobs table
     fetched_job_ids = set()
@@ -240,14 +244,15 @@ def index(database, bucket, **boto_options):
             # Look up path based on job_id
             bar.update(item["Size"])
             job_id = item["Key"].split("textract-output/")[1].split("/")[0]
-            try:
-                job_row = next(
-                    db.query("SELECT key FROM ocr_jobs WHERE job_id = ?", [job_id])
-                )
-            except StopIteration:
-                # This doesn't correspond to a job we know about
-                print("Missing job ID:", job_id)
-                continue
+            if db["ocr_jobs"].exists():
+                try:
+                    job_row = next(
+                        db.query("SELECT key FROM ocr_jobs WHERE job_id = ?", [job_id])
+                    )
+                except StopIteration:
+                    # This doesn't correspond to a job we know about
+                    print("Missing job ID:", job_id)
+                    continue
             path = job_row["key"]
             blocks = json.loads(
                 s3.get_object(Bucket=bucket, Key=item["Key"])["Body"].read()

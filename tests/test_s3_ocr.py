@@ -1,7 +1,11 @@
 from click.testing import CliRunner
+from unittest.mock import ANY
+import sqlite_utils
 from s3_ocr.cli import cli
 import json
+import os
 import pytest
+import sqlite_utils
 
 
 def test_start_creates_s3_ocr_json(s3, textract):
@@ -45,3 +49,52 @@ def test_status(s3, files, expected):
         result = runner.invoke(cli, ["status", "my-bucket"])
         assert result.exit_code == 0
         assert result.output == expected
+
+
+def test_index(s3, tmpdir):
+    index_db = os.path.join(tmpdir, "index.db")
+    for name, content in (
+        ("foo/blah.pdf", b""),
+        ("foo/blah.pdf.s3-ocr.json", b'{"job_id": "x", "etag": "x"}'),
+        (
+            "textract-output/x/1",
+            json.dumps(
+                {
+                    "Blocks": [
+                        {
+                            "Confidence": 100,
+                            "Text": "Hello there",
+                            "BlockType": "LINE",
+                            "Page": 1,
+                        },
+                        {
+                            "Confidence": 100,
+                            "Text": "line 2",
+                            "BlockType": "LINE",
+                            "Page": 1,
+                        },
+                    ]
+                }
+            ).encode("utf8"),
+        ),
+    ):
+        s3.put_object(Bucket="my-bucket", Key=name, Body=content)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            cli, ["index", index_db, "my-bucket"], catch_exceptions=False
+        )
+        assert result.exit_code == 0
+    db = sqlite_utils.Database(index_db)
+    assert list(db["pages"].rows) == [
+        {
+            "path": "foo/blah.pdf",
+            "page": 1,
+            "folder": "foo",
+            "text": "Hello there\nline 2",
+        }
+    ]
+    assert list(db["ocr_jobs"].rows) == [
+        {"key": "foo/blah.pdf", "job_id": "x", "etag": "x", "s3_ocr_etag": ANY}
+    ]
+    assert list(db["fetched_jobs"].rows) == [{"job_id": "x"}]
