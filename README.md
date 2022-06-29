@@ -119,7 +119,7 @@ If you don't want separate files you can combine them together using the `-c/--c
 
 The `output.json` file will then contain data that looks something like this:
 
-```json
+```
 {
   "Blocks": [
     {
