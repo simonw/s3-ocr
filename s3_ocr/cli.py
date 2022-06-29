@@ -87,12 +87,33 @@ def cli():
 
 @cli.command
 @click.argument("bucket")
+@click.option("keys", "-k", "--key", multiple=True, help="Specific keys to process")
 @common_boto3_options
-def start(bucket, **boto_options):
-    "Start OCR tasks for PDF files in an S3 bucket"
+def start(bucket, keys, **boto_options):
+    """
+    Start OCR tasks for all PDF files in an S3 bucket
+
+        s3-ocr start name-of-bucket
+
+    To process specific keys:
+
+        s3-ocr start name-of-bucket -k path/to/key.pdf -k path/to/key2.pdf
+    """
     s3 = make_client("s3", **boto_options)
     textract = make_client("textract", **boto_options)
-    items = list(paginate(s3, "list_objects_v2", "Contents", Bucket=bucket))
+    if keys:
+        items = []
+        for key in keys:
+            matches = list(
+                paginate(s3, "list_objects_v2", "Contents", Bucket=bucket, Prefix=key)
+            )
+            # We only care about exact matches or matches with .s3-ocr.json
+            for match in matches:
+                if match["Key"] in (key, key + S3_OCR_JSON):
+                    items.append(match)
+    else:
+        # Everything
+        items = list(paginate(s3, "list_objects_v2", "Contents", Bucket=bucket))
     # Start any item that ends in .pdf for which a .s3-ocr.json file does not exist
     keys_with_s3_ocr_files = [
         strip_ocr_json(item["Key"])
@@ -288,4 +309,4 @@ def index(database, bucket, **boto_options):
 def paginate(service, method, list_key, **kwargs):
     paginator = service.get_paginator(method)
     for response in paginator.paginate(**kwargs):
-        yield from response[list_key]
+        yield from response.get(list_key) or []

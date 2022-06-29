@@ -25,6 +25,10 @@ You can start the process running like this:
 
 OCR can take some time. The results of the OCR will be stored in `textract-output` in your bucket.
 
+To start processing just one or more specific files, use the `--key` option one or more times:
+
+    s3-ocr start name-of-bucket --key path/to/one.pdf --key path/to/two.pdf
+
 ### s3-ocr start --help
 
 <!-- [[[cog
@@ -41,9 +45,16 @@ cog.out(
 ```
 Usage: s3-ocr start [OPTIONS] BUCKET
 
-  Start OCR tasks for PDF files in an S3 bucket
+  Start OCR tasks for all PDF files in an S3 bucket
+
+      s3-ocr start name-of-bucket
+
+  To process specific keys:
+
+      s3-ocr start name-of-bucket -k path/to/key.pdf -k path/to/key2.pdf
 
 Options:
+  -k, --key TEXT        Specific keys to process
   --access-key TEXT     AWS access key ID
   --secret-key TEXT     AWS secret access key
   --session-token TEXT  AWS session token

@@ -20,6 +20,20 @@ def test_start_creates_s3_ocr_json(s3, textract):
     assert set(decoded.keys()) == {"job_id", "etag"}
 
 
+def test_start_with_key_option(s3, textract):
+    s3.put_object(Bucket="my-bucket", Key="blah2.pdf", Body=b"Fake PDF")
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(cli, ["start", "my-bucket", "-k", "blah2.pdf"])
+        assert result.exit_code == 0
+    bucket_contents = s3.list_objects_v2(Bucket="my-bucket")["Contents"]
+    assert {b["Key"] for b in bucket_contents} == {
+        "blah.pdf",
+        "blah2.pdf",
+        "blah2.pdf.s3-ocr.json",
+    }
+
+
 @pytest.mark.parametrize(
     "files,expected",
     (
