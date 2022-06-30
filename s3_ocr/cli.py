@@ -1,6 +1,7 @@
 import click
 import configparser
 import boto3
+import io
 import json
 import sqlite_utils
 
@@ -248,6 +249,35 @@ def fetch(bucket, key, combine, **boto_options):
             )["Blocks"]
             combined.extend(blocks)
         combine.write(json.dumps({"Blocks": combined}))
+
+
+@cli.command
+@click.argument("bucket")
+@click.argument("key")
+@click.option("--divider", is_flag=True, help="Add ---- between pages")
+@common_boto3_options
+def text(bucket, key, divider, **boto_options):
+    """
+    Retrieve the text from an OCRd PDF file
+
+        s3-ocr text name-of-bucket path/to/key.pdf
+    """
+    output = io.StringIO()
+    fetch.callback(bucket, key, combine=output, **boto_options)
+    output.seek(0)
+    blocks = json.loads(output.getvalue())["Blocks"]
+    current_page = None
+    for block in blocks:
+        if block["BlockType"] == "LINE":
+            page = block["Page"]
+            if current_page is not None:
+                if page != current_page:
+                    if divider:
+                        click.echo("\n----\n")
+                    else:
+                        click.echo("\n")
+            current_page = page
+            click.echo(block["Text"])
 
 
 @cli.command

@@ -125,7 +125,28 @@ def test_fetch(s3, combine):
             }
 
 
-def populate_ocr_results(s3):
+@pytest.mark.parametrize("divider", (True, False))
+def test_text(s3, divider):
+    populate_ocr_results(s3, multi_page=True)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        args = ["text", "my-bucket", "foo/blah.pdf"]
+        if divider:
+            args.append("--divider")
+        result = runner.invoke(cli, args, catch_exceptions=False)
+        assert result.exit_code == 0
+        if divider:
+            assert (
+                result.output
+                == "Hello there\nline 2\n\n----\n\nPage two\nLine 2 of page 2\n"
+            )
+        else:
+            assert (
+                result.output == "Hello there\nline 2\n\n\nPage two\nLine 2 of page 2\n"
+            )
+
+
+def populate_ocr_results(s3, multi_page=False):
     for name, content in (
         ("foo/blah.pdf", b""),
         ("foo/blah.pdf.s3-ocr.json", b'{"job_id": "x", "etag": "x"}'),
@@ -147,6 +168,24 @@ def populate_ocr_results(s3):
                             "Page": 1,
                         },
                     ]
+                    + (
+                        [
+                            {
+                                "Confidence": 100,
+                                "Text": "Page two",
+                                "BlockType": "LINE",
+                                "Page": 2,
+                            },
+                            {
+                                "Confidence": 100,
+                                "Text": "Line 2 of page 2",
+                                "BlockType": "LINE",
+                                "Page": 2,
+                            },
+                        ]
+                        if multi_page
+                        else []
+                    )
                 }
             ).encode("utf8"),
         ),

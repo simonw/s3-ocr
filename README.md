@@ -81,7 +81,7 @@ It compares the jobs that have been submitted, based on `.s3-ocr.json` files, to
 result = runner.invoke(cli.cli, ["status", "--help"])
 help = result.output.replace("Usage: cli", "Usage: s3-ocr")
 cog.out(
-    "```\n{}\n```".format(help)
+    "```\n{}\n```".format(help.split("--access-key")[0] + "--access-key ...")
 )
 ]]] -->
 ```
@@ -90,13 +90,7 @@ Usage: s3-ocr status [OPTIONS] BUCKET
   Show status of OCR jobs for a bucket
 
 Options:
-  --access-key TEXT     AWS access key ID
-  --secret-key TEXT     AWS secret access key
-  --session-token TEXT  AWS session token
-  --endpoint-url TEXT   Custom endpoint URL
-  -a, --auth FILENAME   Path to JSON/INI file containing credentials
-  --help                Show this message and exit.
-
+  --access-key ...
 ```
 <!-- [[[end]]] -->
 
@@ -141,7 +135,7 @@ The `output.json` file will then contain data that looks something like this:
 result = runner.invoke(cli.cli, ["fetch", "--help"])
 help = result.output.replace("Usage: cli", "Usage: s3-ocr")
 cog.out(
-    "```\n{}\n```".format(help)
+    "```\n{}\n```".format(help.split("--access-key")[0] + "--access-key ...")
 )
 ]]] -->
 ```
@@ -163,13 +157,45 @@ Usage: s3-ocr fetch [OPTIONS] BUCKET KEY
 
 Options:
   -c, --combine FILENAME  Write combined JSON to file
-  --access-key TEXT       AWS access key ID
-  --secret-key TEXT       AWS secret access key
-  --session-token TEXT    AWS session token
-  --endpoint-url TEXT     Custom endpoint URL
-  -a, --auth FILENAME     Path to JSON/INI file containing credentials
-  --help                  Show this message and exit.
+  --access-key ...
+```
+<!-- [[[end]]] -->
 
+## Fetching just the text of a page
+
+If you don't want to deal with the JSON directly, you can use the `text` command to retrieve just the text extracted from a PDF:
+
+    s3-ocr text name-of-bucket path/to/file.pdf
+
+This will output plain text to standard output.
+
+To save that to a file, use this:
+
+    s3-ocr text name-of-bucket path/to/file.pdf > text.txt
+
+Separate pages will be separated by three newlines. To separate them using a `----` horizontal divider instead add `--divider`:
+
+    s3-ocr text name-of-bucket path/to/file.pdf --divider
+
+### s3-ocr text --help
+
+<!-- [[[cog
+result = runner.invoke(cli.cli, ["text", "--help"])
+help = result.output.replace("Usage: cli", "Usage: s3-ocr")
+cog.out(
+    "```\n{}\n```".format(help.split("--access-key")[0] + "--access-key ...")
+)
+]]] -->
+```
+Usage: s3-ocr text [OPTIONS] BUCKET KEY
+
+  Retrieve the text from an OCRd PDF file
+
+      s3-ocr text name-of-bucket path/to/key.pdf
+
+Options:
+  --divider             Add ---- between pages
+  --access-key ...
 ```
 <!-- [[[end]]] -->
 
@@ -232,7 +258,7 @@ The database is designed to be used with [Datasette](https://datasette.io).
 result = runner.invoke(cli.cli, ["index", "--help"])
 help = result.output.replace("Usage: cli", "Usage: s3-ocr")
 cog.out(
-    "```\n{}\n```".format(help)
+    "```\n{}\n```".format(help.split("--access-key")[0] + "--access-key ...")
 )
 ]]] -->
 ```
@@ -241,13 +267,7 @@ Usage: s3-ocr index [OPTIONS] DATABASE BUCKET
   Create a SQLite database with OCR results for files in a bucket
 
 Options:
-  --access-key TEXT     AWS access key ID
-  --secret-key TEXT     AWS secret access key
-  --session-token TEXT  AWS session token
-  --endpoint-url TEXT   Custom endpoint URL
-  -a, --auth FILENAME   Path to JSON/INI file containing credentials
-  --help                Show this message and exit.
-
+  --access-key ...
 ```
 <!-- [[[end]]] -->
 
