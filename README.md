@@ -13,6 +13,10 @@ Install this tool using `pip`:
 
     pip install s3-ocr
 
+## Demo
+
+You can see the results of running this tool against three PDFs from the Internet Archive ([one](https://archive.org/details/unmaskingrobert00houdgoog), [two](https://archive.org/details/practicalmagicia00harr), [three](https://archive.org/details/latestmagicbeing00hoff)) in [this example table](https://s3-ocr-demo.datasette.io/pages/pages?_facet=path#facet-path) hosted using [Datasette](https://datasette.io/).
+
 ## Starting OCR against PDFs in a bucket
 
 The `start` command takes a list of keys and submits them to [Textract](https://aws.amazon.com/textract/) for OCR processing.
