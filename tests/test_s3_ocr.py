@@ -8,7 +8,7 @@ import pytest
 import sqlite_utils
 
 
-def test_start_with_no_options_error():
+def test_start_with_no_options_error(s3):
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(cli, ["start", "my-bucket"])
