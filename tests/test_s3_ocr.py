@@ -71,7 +71,7 @@ def test_index(s3, tmpdir):
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(
-            cli, ["index", index_db, "my-bucket"], catch_exceptions=False
+            cli, ["index", "my-bucket", index_db], catch_exceptions=False
         )
         assert result.exit_code == 0
     db = sqlite_utils.Database(index_db)

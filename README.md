@@ -224,10 +224,10 @@ This design for the tool, with the `.s3-ocr.json` files tracking jobs that have 
 
 ## Creating a SQLite index of your OCR results
 
-The `s3-ocr index <database_file> <bucket>` command creates a SQLite database contaning the results of the OCR, and configure SQLite full-text search for the text:
+The `s3-ocr index <bucket> <database_file>` command creates a SQLite database contaning the results of the OCR, and configure SQLite full-text search for the text:
 
 ```
-% s3-ocr index index.db sfms-history
+% s3-ocr index sfms-history index.db
 Fetching job details  [####################################]  100%
 Populating pages table  [####################----------------]   55%  00:03:18
 ```
@@ -262,7 +262,7 @@ cog.out(
 )
 ]]] -->
 ```
-Usage: s3-ocr index [OPTIONS] DATABASE BUCKET
+Usage: s3-ocr index [OPTIONS] BUCKET DATABASE
 
   Create a SQLite database with OCR results for files in a bucket
 

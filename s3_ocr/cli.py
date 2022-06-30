@@ -281,14 +281,14 @@ def text(bucket, key, divider, **boto_options):
 
 
 @cli.command
+@click.argument("bucket")
 @click.argument(
     "database",
     type=click.Path(file_okay=True, dir_okay=False, allow_dash=False),
     required=True,
 )
-@click.argument("bucket")
 @common_boto3_options
-def index(database, bucket, **boto_options):
+def index(bucket, database, **boto_options):
     "Create a SQLite database with OCR results for files in a bucket"
     db = sqlite_utils.Database(database)
     if not db["pages"].exists():
