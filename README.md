@@ -21,7 +21,7 @@ You can see the results of running this tool against three PDFs from the Interne
 
 The `start` command takes a list of keys and submits them to [Textract](https://aws.amazon.com/textract/) for OCR processing.
 
-You need to have AWS configured using environment variables or a credentials file in your home directory.
+You need to have AWS configured using environment variables, credentials file in your home directory or a JSON or INI file generated using [s3-credentials](https://datasette.io/tools/s3-credentials).
 
 You can start the process running like this:
 
