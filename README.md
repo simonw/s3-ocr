@@ -98,6 +98,8 @@ Options:
 ```
 <!-- [[[end]]] -->
 
+## Inspecting a job
+
 The `s3-ocr inspect-job <job_id>` command can be used to check the status of a specific job ID:
 ```
 % s3-ocr inspect-job b267282745685226339b7e0d4366c4ff6887b7e293ed4b304dc8bb8b991c7864
