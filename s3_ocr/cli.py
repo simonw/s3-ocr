@@ -88,17 +88,18 @@ def cli():
 
 @cli.command
 @click.argument("bucket")
-@click.option("keys", "-k", "--key", multiple=True, help="Specific keys to process")
+@click.argument("keys", nargs=-1)
+@click.option("--all", is_flag=True, help="Process all PDF files in the bucket")
 @common_boto3_options
-def start(bucket, keys, **boto_options):
+def start(bucket, keys, all, **boto_options):
     """
-    Start OCR tasks for all PDF files in an S3 bucket
+    Start OCR tasks for PDF files in an S3 bucket
 
-        s3-ocr start name-of-bucket
+        s3-ocr start name-of-bucket path/to/one.pdf path/to/two.pdf
 
-    To process specific keys:
+    To process every file with a .pdf extension:
 
-        s3-ocr start name-of-bucket -k path/to/key.pdf -k path/to/key2.pdf
+        s3-ocr start name-of-bucket --all
     """
     s3 = make_client("s3", **boto_options)
     textract = make_client("textract", **boto_options)
@@ -113,7 +114,10 @@ def start(bucket, keys, **boto_options):
                 if match["Key"] in (key, key + S3_OCR_JSON):
                     items.append(match)
     else:
-        # Everything
+        if not all:
+            raise click.ClickException(
+                "Specify keys, or use --all to process all PDFs in the bucket"
+            )
         items = list(paginate(s3, "list_objects_v2", "Contents", Bucket=bucket))
     # Start any item that ends in .pdf for which a .s3-ocr.json file does not exist
     keys_with_s3_ocr_files = [

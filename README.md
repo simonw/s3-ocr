@@ -15,19 +15,23 @@ Install this tool using `pip`:
 
 ## Starting OCR against PDFs in a bucket
 
-The `start` command loops through every PDF file in a bucket (every file ending in `.pdf`) and submits it to [Textract](https://aws.amazon.com/textract/) for OCR processing.
+The `start` command takes a list of keys and submits them to [Textract](https://aws.amazon.com/textract/) for OCR processing.
 
 You need to have AWS configured using environment variables or a credentials file in your home directory.
 
 You can start the process running like this:
 
-    s3-ocr start name-of-your-bucket
+    s3-ocr start name-of-your-bucket my-pdf-file.pdf
+
+The paths you specify should be paths within the bucket. If you stored your PDF files in folders inside the bucket it should look like this:
+
+    s3-ocr start name-of-your-bucket path/to/one.pdf path/to/two.pdf
 
 OCR can take some time. The results of the OCR will be stored in `textract-output` in your bucket.
 
-To start processing just one or more specific files, use the `--key` option one or more times:
+To process every file in the bucket with a `.pdf` extension use `--all`:
 
-    s3-ocr start name-of-bucket --key path/to/one.pdf --key path/to/two.pdf
+    s3-ocr start name-of-bucket --all
 
 ### s3-ocr start --help
 
@@ -43,18 +47,18 @@ cog.out(
 )
 ]]] -->
 ```
-Usage: s3-ocr start [OPTIONS] BUCKET
+Usage: s3-ocr start [OPTIONS] BUCKET [KEYS]...
 
-  Start OCR tasks for all PDF files in an S3 bucket
+  Start OCR tasks for PDF files in an S3 bucket
 
-      s3-ocr start name-of-bucket
+      s3-ocr start name-of-bucket path/to/one.pdf path/to/two.pdf
 
-  To process specific keys:
+  To process every file with a .pdf extension:
 
-      s3-ocr start name-of-bucket -k path/to/key.pdf -k path/to/key2.pdf
+      s3-ocr start name-of-bucket --all
 
 Options:
-  -k, --key TEXT        Specific keys to process
+  --all                 Process all PDF files in the bucket
   --access-key TEXT     AWS access key ID
   --secret-key TEXT     AWS secret access key
   --session-token TEXT  AWS session token

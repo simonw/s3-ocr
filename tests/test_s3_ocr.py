@@ -8,10 +8,21 @@ import pytest
 import sqlite_utils
 
 
-def test_start_creates_s3_ocr_json(s3, textract):
+def test_start_with_no_options_error():
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(cli, ["start", "my-bucket"])
+        assert result.exit_code == 1
+        assert (
+            "Specify keys, or use --all to process all PDFs in the bucket"
+            in result.output
+        )
+
+
+def test_start_all_creates_s3_ocr_json(s3, textract):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(cli, ["start", "my-bucket", "--all"])
         assert result.exit_code == 0
     bucket_contents = s3.list_objects_v2(Bucket="my-bucket")["Contents"]
     assert {b["Key"] for b in bucket_contents} == {"blah.pdf", "blah.pdf.s3-ocr.json"}
@@ -20,11 +31,11 @@ def test_start_creates_s3_ocr_json(s3, textract):
     assert set(decoded.keys()) == {"job_id", "etag"}
 
 
-def test_start_with_key_option(s3, textract):
+def test_start_with_specified_key(s3, textract):
     s3.put_object(Bucket="my-bucket", Key="blah2.pdf", Body=b"Fake PDF")
     runner = CliRunner()
     with runner.isolated_filesystem():
-        result = runner.invoke(cli, ["start", "my-bucket", "-k", "blah2.pdf"])
+        result = runner.invoke(cli, ["start", "my-bucket", "blah2.pdf"])
         assert result.exit_code == 0
     bucket_contents = s3.list_objects_v2(Bucket="my-bucket")["Contents"]
     assert {b["Key"] for b in bucket_contents} == {
