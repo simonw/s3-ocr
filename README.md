@@ -98,6 +98,39 @@ Options:
 ```
 <!-- [[[end]]] -->
 
+The `s3-ocr inspect-job <job_id>` command can be used to check the status of a specific job ID:
+```
+% s3-ocr inspect-job b267282745685226339b7e0d4366c4ff6887b7e293ed4b304dc8bb8b991c7864
+{
+  "DocumentMetadata": {
+    "Pages": 583
+  },
+  "JobStatus": "SUCCEEDED",
+  "DetectDocumentTextModelVersion": "1.0"
+}
+```
+
+### s3-ocr inspect-job --help
+
+<!-- [[[cog
+result = runner.invoke(cli.cli, ["inspect-job", "--help"])
+help = result.output.replace("Usage: cli", "Usage: s3-ocr")
+cog.out(
+    "```\n{}\n```".format(help.split("--access-key")[0] + "--access-key ...")
+)
+]]] -->
+```
+Usage: s3-ocr inspect-job [OPTIONS] JOB_ID
+
+  Show the current status of an OCR job
+
+      s3-ocr inspect-job <job_id>
+
+Options:
+  --access-key ...
+```
+<!-- [[[end]]] -->
+
 ## Fetching the results
 
 Once an OCR job has completed you can download the resulting JSON using the `fetch` command:

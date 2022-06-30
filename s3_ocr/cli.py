@@ -185,6 +185,25 @@ def status(bucket, **boto_options):
 
 
 @cli.command
+@click.argument("job_id")
+@common_boto3_options
+def inspect_job(job_id, **boto_options):
+    """
+    Show the current status of an OCR job
+
+        s3-ocr inspect-job <job_id>
+    """
+    textract = make_client("textract", **boto_options)
+    try:
+        response = textract.get_document_text_detection(JobId=job_id)
+    except textract.exceptions.InvalidJobIdException:
+        raise click.ClickException("Invalid job ID")
+    for key in ("Blocks", "ResponseMetadata", "NextToken"):
+        response.pop(key, None)
+    click.echo(json.dumps(response, indent=2))
+
+
+@cli.command
 @click.argument("bucket")
 @click.argument("key")
 @click.option(
