@@ -269,7 +269,7 @@ This design for the tool, with the `.s3-ocr.json` files tracking jobs that have 
 
 ## Creating a SQLite index of your OCR results
 
-The `s3-ocr index <bucket> <database_file>` command creates a SQLite database contaning the results of the OCR, and configure SQLite full-text search for the text:
+The `s3-ocr index <bucket> <database_file>` command creates a SQLite database containing the results of the OCR, and configures SQLite full-text search against the text:
 
 ```
 % s3-ocr index sfms-history index.db
