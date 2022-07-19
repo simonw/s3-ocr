@@ -67,8 +67,13 @@ Usage: s3-ocr start [OPTIONS] BUCKET [KEYS]...
 
       s3-ocr start name-of-bucket --all
 
+  To process every .pdf in the PUBLIC/ folder:
+
+      s3-ocr start name-of-bucket --prefix PUBLIC/
+
 Options:
   --all                 Process all PDF files in the bucket
+  --prefix TEXT         Process all PDF files within this prefix
   --access-key TEXT     AWS access key ID
   --secret-key TEXT     AWS secret access key
   --session-token TEXT  AWS session token
