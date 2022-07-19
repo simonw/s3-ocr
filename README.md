@@ -253,6 +253,41 @@ Options:
 ```
 <!-- [[[end]]] -->
 
+## Avoiding processing duplicates
+
+If you move files around within your S3 bucket `s3-ocr` can lose track of which files have already been processed. This can lead to additional Textract charges for processing should you run `s3-ocr start` against those new files.
+
+The `s3-ocr dedupe` command addresses this by scanning your bucket for files that have a new name but have previously been processed. It does this by looking at the `ETag` for each file, which represents the MD5 hash of the file contents.
+
+The command will write out new `.s3ocr.json` files for each detected duplicate. This will avoid those duplicates being run those duplicates through OCR a second time should yo run `s3-ocr start`.
+
+    s3-ocr dedupe name-of-bucket
+
+Add `--dry-run` for a preview of the changes that will be made to your bucket.
+
+### s3-ocr dedupe --help
+
+<!-- [[[cog
+result = runner.invoke(cli.cli, ["dedupe", "--help"])
+help = result.output.replace("Usage: cli", "Usage: s3-ocr")
+cog.out(
+    "```\n{}\n```".format(help.split("--access-key")[0] + "--access-key ...")
+)
+]]] -->
+```
+Usage: s3-ocr dedupe [OPTIONS] BUCKET
+
+  Scan every file in the bucket checking for duplicates - files that have not
+  yet been OCRd but that have the same contents (based on ETag) as a file that
+  HAS been OCRd.
+
+      s3-ocr dedupe name-of-bucket
+
+Options:
+  --dry-run             Show output without writing anything to S3
+  --access-key ...
+```
+<!-- [[[end]]] -->
 
 ## Changes made to your bucket
 

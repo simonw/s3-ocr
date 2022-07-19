@@ -112,7 +112,12 @@ def test_index(s3, tmpdir):
         }
     ]
     assert list(db["ocr_jobs"].rows) == [
-        {"key": "foo/blah.pdf", "job_id": "x", "etag": "x", "s3_ocr_etag": ANY}
+        {
+            "key": "foo/blah.pdf",
+            "job_id": "x",
+            "etag": '"a4d0cb8bd505f67f3ea1cb5583e49550"',
+            "s3_ocr_etag": ANY,
+        }
     ]
     assert list(db["fetched_jobs"].rows) == [{"job_id": "x"}]
 
@@ -176,8 +181,11 @@ def test_text(s3, divider):
 
 def populate_ocr_results(s3, multi_page=False):
     for name, content in (
-        ("foo/blah.pdf", b""),
-        ("foo/blah.pdf.s3-ocr.json", b'{"job_id": "x", "etag": "x"}'),
+        ("foo/blah.pdf", b"Predictable ETag"),
+        (
+            "foo/blah.pdf.s3-ocr.json",
+            b'{"job_id": "x", "etag": "\\"a4d0cb8bd505f67f3ea1cb5583e49550\\""}',
+        ),
         (
             "textract-output/x/1",
             json.dumps(
@@ -219,3 +227,21 @@ def populate_ocr_results(s3, multi_page=False):
         ),
     ):
         s3.put_object(Bucket="my-bucket", Key=name, Body=content)
+
+
+def test_dedupe(s3):
+    populate_ocr_results(s3)
+    s3.put_object(Bucket="my-bucket", Key="duplicate.pdf", Body=b"Predictable ETag")
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(cli, ["dedupe", "my-bucket"])
+        assert result.exit_code == 0
+    bucket_contents = s3.list_objects_v2(Bucket="my-bucket")["Contents"]
+    assert {b["Key"] for b in bucket_contents} == {
+        "blah.pdf",
+        "duplicate.pdf.s3-ocr.json",
+        "duplicate.pdf",
+        "foo/blah.pdf.s3-ocr.json",
+        "foo/blah.pdf",
+        "textract-output/x/1",
+    }

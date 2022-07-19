@@ -170,6 +170,81 @@ def start(bucket, keys, all, prefix, **boto_options):
 
 @cli.command
 @click.argument("bucket")
+@click.option(
+    "--dry-run", is_flag=True, help="Show output without writing anything to S3"
+)
+@common_boto3_options
+def dedupe(bucket, dry_run, **boto_options):
+    """
+    Scan every file in the bucket checking for duplicates - files that have
+    not yet been OCRd but that have the same contents (based on ETag) as a
+    file that HAS been OCRd.
+
+        s3-ocr dedupe name-of-bucket
+    """
+    s3 = make_client("s3", **boto_options)
+    click.echo("Scanning bucket {}".format(bucket), err=True)
+    items = list(paginate(s3, "list_objects_v2", "Contents", Bucket=bucket))
+    s3_ocr_to_fetch = [
+        (item["Key"], item["ETag"], strip_ocr_json(item["Key"]))
+        for item in items
+        if item["Key"].endswith(S3_OCR_JSON)
+    ]
+    keys_that_have_been_done = {s3_ocr[2] for s3_ocr in s3_ocr_to_fetch}
+
+    def _fetch():
+        for ocr_json_key, etag, key in s3_ocr_to_fetch:
+            response = s3.get_object(Bucket=bucket, Key=ocr_json_key)
+            data = json.loads(response["Body"].read())
+            yield {
+                "key": key,
+                "job_id": data["job_id"],
+                "etag": data["etag"],
+                "s3_ocr_etag": response["ETag"],
+            }
+
+    jobs_by_etag = {}
+    with click.progressbar(
+        _fetch(),
+        length=len(s3_ocr_to_fetch),
+        label="Fetching previous OCR jobs",
+        show_pos=True,
+    ) as rows:
+        for row in rows:
+            jobs_by_etag[row["etag"]] = row
+
+    # Check ETags of every file that has not been OCRd yet
+    not_yet_ocrd_keys = [
+        item
+        for item in items
+        if item["Key"].endswith(".pdf") and item["Key"] not in keys_that_have_been_done
+    ]
+
+    # Which of these are dupes?
+    dupes = {
+        item["Key"]: jobs_by_etag[item["ETag"]]
+        for item in not_yet_ocrd_keys
+        if item["ETag"] in jobs_by_etag
+    }
+
+    if dry_run:
+        click.echo("Would write results for the following dupes:")
+        click.echo(json.dumps(dupes, indent=2))
+    else:
+        with click.progressbar(
+            dupes.items(), label="Writing results for dupes", show_pos=True
+        ) as pairs:
+            for key, details in pairs:
+                body = {"job_id": details["job_id"], "etag": details["etag"]}
+                s3.put_object(
+                    Bucket=bucket,
+                    Key=f"{key}.s3-ocr.json",
+                    Body=json.dumps(body),
+                )
+
+
+@cli.command
+@click.argument("bucket")
 @common_boto3_options
 def status(bucket, **boto_options):
     "Show status of OCR jobs for a bucket"
