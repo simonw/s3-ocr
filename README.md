@@ -39,6 +39,10 @@ To process every file in the bucket with a `.pdf` extension use `--all`:
 
     s3-ocr start name-of-bucket --all
 
+To process every file with a `.pdf` extension within a specific folder, use `--prefix`:
+
+    s3-ocr start name-of-bucket --prefix path/to/folder
+
 ### s3-ocr start --help
 
 <!-- [[[cog

@@ -90,8 +90,9 @@ def cli():
 @click.argument("bucket")
 @click.argument("keys", nargs=-1)
 @click.option("--all", is_flag=True, help="Process all PDF files in the bucket")
+@click.option("--prefix", help="Process all PDF files within this prefix")
 @common_boto3_options
-def start(bucket, keys, all, **boto_options):
+def start(bucket, keys, all, prefix, **boto_options):
     """
     Start OCR tasks for PDF files in an S3 bucket
 
@@ -100,6 +101,10 @@ def start(bucket, keys, all, **boto_options):
     To process every file with a .pdf extension:
 
         s3-ocr start name-of-bucket --all
+
+    To process every .pdf in the PUBLIC/ folder:
+
+        s3-ocr start name-of-bucket --prefix PUBLIC/
     """
     s3 = make_client("s3", **boto_options)
     textract = make_client("textract", **boto_options)
@@ -114,11 +119,14 @@ def start(bucket, keys, all, **boto_options):
                 if match["Key"] in (key, key + S3_OCR_JSON):
                     items.append(match)
     else:
-        if not all:
+        if not all and not prefix:
             raise click.ClickException(
-                "Specify keys, or use --all to process all PDFs in the bucket"
+                "Specify keys, --prefix or use --all to process all PDFs in the bucket"
             )
-        items = list(paginate(s3, "list_objects_v2", "Contents", Bucket=bucket))
+        kwargs = dict(Bucket=bucket)
+        if prefix:
+            kwargs["Prefix"] = prefix
+        items = list(paginate(s3, "list_objects_v2", "Contents", **kwargs))
     # Start any item that ends in .pdf for which a .s3-ocr.json file does not exist
     keys_with_s3_ocr_files = [
         strip_ocr_json(item["Key"])

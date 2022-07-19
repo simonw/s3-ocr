@@ -14,7 +14,7 @@ def test_start_with_no_options_error(s3):
         result = runner.invoke(cli, ["start", "my-bucket"])
         assert result.exit_code == 1
         assert (
-            "Specify keys, or use --all to process all PDFs in the bucket"
+            "Specify keys, --prefix or use --all to process all PDFs in the bucket"
             in result.output
         )
 
@@ -42,6 +42,23 @@ def test_start_with_specified_key(s3, textract):
         "blah.pdf",
         "blah2.pdf",
         "blah2.pdf.s3-ocr.json",
+    }
+
+
+def test_start_with_prefix(s3, textract):
+    s3.put_object(Bucket="my-bucket", Key="pre/blah1.pdf", Body=b"Fake PDF")
+    s3.put_object(Bucket="my-bucket", Key="pre/blah2.pdf", Body=b"Fake PDF")
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(cli, ["start", "my-bucket", "--prefix", "pre/"])
+        assert result.exit_code == 0, result.output
+    bucket_contents = s3.list_objects_v2(Bucket="my-bucket")["Contents"]
+    assert {b["Key"] for b in bucket_contents} == {
+        "blah.pdf",
+        "pre/blah1.pdf",
+        "pre/blah1.pdf.s3-ocr.json",
+        "pre/blah2.pdf",
+        "pre/blah2.pdf.s3-ocr.json",
     }
 
 
