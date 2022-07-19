@@ -404,7 +404,7 @@ def index(bucket, database, **boto_options):
                     )
                 except StopIteration:
                     # This doesn't correspond to a job we know about
-                    print("Missing job ID:", job_id)
+                    click.echo("Missing job ID:", job_id, err=True)
                     continue
             path = job_row["key"]
             blocks = json.loads(
