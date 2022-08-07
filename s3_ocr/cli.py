@@ -4,6 +4,7 @@ import boto3
 import io
 import json
 import sqlite_utils
+import time
 
 S3_OCR_JSON = ".s3-ocr.json"
 
@@ -98,8 +99,9 @@ def cli():
 @click.option(
     "--dry-run", is_flag=True, help="Show what this would do, but don't actually do it"
 )
+@click.option("--no-retry", is_flag=True, help="Don't retry failed requests")
 @common_boto3_options
-def start(bucket, keys, all, prefix, dry_run, **boto_options):
+def start(bucket, keys, all, prefix, dry_run, no_retry, **boto_options):
     """
     Start OCR tasks for PDF files in an S3 bucket
 
@@ -158,18 +160,30 @@ def start(bucket, keys, all, prefix, dry_run, **boto_options):
     for item in pdf_items:
         key = item["Key"]
         if key not in keys_with_s3_ocr_files:
-            response = textract.start_document_text_detection(
-                DocumentLocation={
-                    "S3Object": {
-                        "Bucket": bucket,
-                        "Name": key,
-                    }
-                },
-                OutputConfig={
-                    "S3Bucket": bucket,
-                    "S3Prefix": "textract-output",
-                },
-            )
+            sleep = 1
+            while True:
+                try:
+                    response = start_document_text_extraction(
+                        textract,
+                        DocumentLocation={
+                            "S3Object": {
+                                "Bucket": bucket,
+                                "Name": key,
+                            }
+                        },
+                        OutputConfig={
+                            "S3Bucket": bucket,
+                            "S3Prefix": "textract-output",
+                        },
+                    )
+                    break
+                except textract.exceptions.LimitExceededException as ex:
+                    if no_retry:
+                        raise click.ClickException(str(ex))
+                    click.echo("{} - retrying...".format(str(ex)))
+                    time.sleep(sleep)
+                    if sleep < 8:
+                        sleep *= 2
             job_id = response.get("JobId")
             if job_id:
                 click.echo(f"Starting OCR for {key}, Job ID: {job_id}")
@@ -533,3 +547,8 @@ def paginate(service, method, list_key, **kwargs):
     paginator = service.get_paginator(method)
     for response in paginator.paginate(**kwargs):
         yield from response.get(list_key) or []
+
+
+def start_document_text_extraction(textract, **kwargs):
+    # Wrapper function to make this easier to mock in tests
+    return textract.start_document_text_detection(**kwargs)

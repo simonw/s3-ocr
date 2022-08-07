@@ -1,3 +1,4 @@
+import boto3
 from click.testing import CliRunner
 from unittest.mock import ANY
 import sqlite_utils
@@ -24,6 +25,10 @@ def test_start_all_creates_s3_ocr_json(s3, textract):
     with runner.isolated_filesystem():
         result = runner.invoke(cli, ["start", "my-bucket", "--all"])
         assert result.exit_code == 0
+    assert_expected_contents_after_all(s3)
+
+
+def assert_expected_contents_after_all(s3):
     bucket_contents = s3.list_objects_v2(Bucket="my-bucket")["Contents"]
     assert {b["Key"] for b in bucket_contents} == {"blah.pdf", "blah.pdf.s3-ocr.json"}
     content = s3.get_object(Bucket="my-bucket", Key="blah.pdf.s3-ocr.json")
@@ -257,3 +262,46 @@ def test_dedupe(s3):
         "foo/blah.pdf",
         "textract-output/x/1",
     }
+
+
+def test_limit_exceeded_no_retry(s3, mocker):
+    mocked = mocker.patch("s3_ocr.cli.start_document_text_extraction")
+    mocked.side_effect = boto3.client("textract").exceptions.LimitExceededException(
+        error_response={},
+        operation_name="StartDocumentTextExtraction",
+    )
+    runner = CliRunner()
+    result = runner.invoke(cli, ["start", "my-bucket", "--all", "--no-retry"])
+    assert result.exit_code == 1
+    assert result.output == (
+        "Found 0 files with .s3-ocr.json out of 1 PDFs\n"
+        "Error: An error occurred (Unknown) when calling the StartDocumentTextExtraction operation: Unknown\n"
+    )
+
+
+def test_limit_exceeded_automatic_retry(s3, mocker):
+    mocked = mocker.patch("s3_ocr.cli.start_document_text_extraction")
+    # It's going to fail the time
+    should_fail = True
+
+    def side_effect(*args, **kwargs):
+        nonlocal should_fail
+        if should_fail:
+            should_fail = False
+            raise boto3.client("textract").exceptions.LimitExceededException(
+                error_response={},
+                operation_name="StartDocumentTextExtraction",
+            )
+        else:
+            return {"JobId": "123"}
+
+    mocked.side_effect = side_effect
+    runner = CliRunner()
+    result = runner.invoke(cli, ["start", "my-bucket", "--all"])
+    assert result.exit_code == 0
+    assert result.output == (
+        "Found 0 files with .s3-ocr.json out of 1 PDFs\n"
+        "An error occurred (Unknown) when calling the StartDocumentTextExtraction operation: Unknown - retrying...\n"
+        "Starting OCR for blah.pdf, Job ID: 123\n"
+    )
+    assert_expected_contents_after_all(s3)

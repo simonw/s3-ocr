@@ -75,6 +75,7 @@ Options:
   --all                 Process all PDF files in the bucket
   --prefix TEXT         Process all PDF files within this prefix
   --dry-run             Show what this would do, but don't actually do it
+  --no-retry            Don't retry failed requests
   --access-key TEXT     AWS access key ID
   --secret-key TEXT     AWS secret access key
   --session-token TEXT  AWS session token
