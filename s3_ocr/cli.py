@@ -44,7 +44,9 @@ def common_boto3_options(fn):
     return fn
 
 
-def make_client(service, access_key, secret_key, session_token, endpoint_url, auth):
+def make_client(
+    service, access_key, secret_key, session_token, endpoint_url, auth, region_name=None
+):
     if auth:
         if access_key or secret_key or session_token:
             raise click.ClickException(
@@ -77,6 +79,8 @@ def make_client(service, access_key, secret_key, session_token, endpoint_url, au
         kwargs["aws_session_token"] = session_token
     if endpoint_url:
         kwargs["endpoint_url"] = endpoint_url
+    if region_name:
+        kwargs["region_name"] = region_name
     return boto3.client(service, **kwargs)
 
 
@@ -110,7 +114,8 @@ def start(bucket, keys, all, prefix, dry_run, **boto_options):
         s3-ocr start name-of-bucket --prefix PUBLIC/
     """
     s3 = make_client("s3", **boto_options)
-    textract = make_client("textract", **boto_options)
+    bucket_region = s3.get_bucket_location(Bucket=bucket)["LocationConstraint"]
+    textract = make_client("textract", region_name=bucket_region, **boto_options)
     if keys:
         items = []
         for key in keys:
