@@ -282,20 +282,13 @@ def test_limit_exceeded_no_retry(s3, mocker):
 def test_limit_exceeded_automatic_retry(s3, mocker):
     mocked = mocker.patch("s3_ocr.cli.start_document_text_extraction")
     # It's going to fail the first time, then succeed
-    should_fail = True
-
-    def side_effect(*args, **kwargs):
-        nonlocal should_fail
-        if should_fail:
-            should_fail = False
-            raise boto3.client("textract").exceptions.LimitExceededException(
-                error_response={},
-                operation_name="StartDocumentTextExtraction",
-            )
-        else:
-            return {"JobId": "123"}
-
-    mocked.side_effect = side_effect
+    mocked.side_effect = [
+        boto3.client("textract").exceptions.LimitExceededException(
+            error_response={},
+            operation_name="StartDocumentTextExtraction",
+        ),
+        {"JobId": "123"},
+    ]
     runner = CliRunner()
     result = runner.invoke(cli, ["start", "my-bucket", "--all"])
     assert result.exit_code == 0
