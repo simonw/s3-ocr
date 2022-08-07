@@ -31,6 +31,18 @@ def test_start_all_creates_s3_ocr_json(s3, textract):
     assert set(decoded.keys()) == {"job_id", "etag"}
 
 
+def test_start_all_dry_run(s3):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(cli, ["start", "my-bucket", "--all", "--dry-run"])
+        assert result.exit_code == 0
+    assert result.output == (
+        "Found 0 files with .s3-ocr.json out of 1 PDFs\n"
+        "Would start 1 tasks for these keys:\n"
+        "blah.pdf\n"
+    )
+
+
 def test_start_with_specified_key(s3, textract):
     s3.put_object(Bucket="my-bucket", Key="blah2.pdf", Body=b"Fake PDF")
     runner = CliRunner()

@@ -91,8 +91,11 @@ def cli():
 @click.argument("keys", nargs=-1)
 @click.option("--all", is_flag=True, help="Process all PDF files in the bucket")
 @click.option("--prefix", help="Process all PDF files within this prefix")
+@click.option(
+    "--dry-run", is_flag=True, help="Show what this would do, but don't actually do it"
+)
 @common_boto3_options
-def start(bucket, keys, all, prefix, **boto_options):
+def start(bucket, keys, all, prefix, dry_run, **boto_options):
     """
     Start OCR tasks for PDF files in an S3 bucket
 
@@ -139,6 +142,14 @@ def start(bucket, keys, all, prefix, **boto_options):
             len(keys_with_s3_ocr_files), S3_OCR_JSON, len(pdf_items)
         )
     )
+    if dry_run:
+        items = [
+            item for item in pdf_items if item["Key"] not in keys_with_s3_ocr_files
+        ]
+        click.echo("Would start {} tasks for these keys:".format(len(items)))
+        for item in items:
+            click.echo(item["Key"])
+        return
     for item in pdf_items:
         key = item["Key"]
         if key not in keys_with_s3_ocr_files:
