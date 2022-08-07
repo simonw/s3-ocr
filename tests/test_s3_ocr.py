@@ -281,7 +281,7 @@ def test_limit_exceeded_no_retry(s3, mocker):
 
 def test_limit_exceeded_automatic_retry(s3, mocker):
     mocked = mocker.patch("s3_ocr.cli.start_document_text_extraction")
-    # It's going to fail the time
+    # It's going to fail the first time, then succeed
     should_fail = True
 
     def side_effect(*args, **kwargs):
