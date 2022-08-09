@@ -97,7 +97,7 @@ def cli():
     """
 
 
-@cli.command
+@cli.command()
 @click.argument("bucket")
 @click.argument("keys", nargs=-1)
 @click.option("--all", is_flag=True, help="Process all PDF files in the bucket")
@@ -204,7 +204,7 @@ def start(bucket, keys, all, prefix, dry_run, no_retry, **boto_options):
                 click.echo(response)
 
 
-@cli.command
+@cli.command()
 @click.argument("bucket")
 @click.option(
     "--dry-run", is_flag=True, help="Show output without writing anything to S3"
@@ -279,7 +279,7 @@ def dedupe(bucket, dry_run, **boto_options):
                 )
 
 
-@cli.command
+@cli.command()
 @click.argument("bucket")
 @common_boto3_options
 def status(bucket, **boto_options):
@@ -303,7 +303,7 @@ def status(bucket, **boto_options):
     )
 
 
-@cli.command
+@cli.command()
 @click.argument("job_id")
 @common_boto3_options
 def inspect_job(job_id, **boto_options):
@@ -322,7 +322,7 @@ def inspect_job(job_id, **boto_options):
     click.echo(json.dumps(response, indent=2))
 
 
-@cli.command
+@cli.command()
 @click.argument("bucket")
 @click.argument("key")
 @click.option(
@@ -393,7 +393,7 @@ def fetch(bucket, key, combine, **boto_options):
         combine.write(json.dumps({"Blocks": combined}))
 
 
-@cli.command
+@cli.command()
 @click.argument("bucket")
 @click.argument("key")
 @click.option("--divider", is_flag=True, help="Add ---- between pages")
@@ -422,7 +422,7 @@ def text(bucket, key, divider, **boto_options):
             click.echo(block["Text"])
 
 
-@cli.command
+@cli.command()
 @click.argument("bucket")
 @click.argument(
     "database",
