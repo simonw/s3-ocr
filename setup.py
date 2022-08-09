@@ -31,7 +31,7 @@ setup(
         [console_scripts]
         s3-ocr=s3_ocr.cli:cli
     """,
-    install_requires=["click", "boto3", "sqlite-utils"],
+    install_requires=["click>=8.0", "boto3", "sqlite-utils"],
     extras_require={"test": ["pytest", "moto[s3,textract]", "cogapp", "pytest-mock"]},
     python_requires=">=3.7",
 )
