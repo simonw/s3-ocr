@@ -112,7 +112,7 @@ def test_status(s3, files, expected):
 
 def test_index(s3, tmpdir):
     index_db = os.path.join(tmpdir, "index.db")
-    populate_ocr_results(s3)
+    populate_ocr_results(s3, multi_page=True)
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(
@@ -126,7 +126,14 @@ def test_index(s3, tmpdir):
             "page": 1,
             "folder": "foo",
             "text": "Hello there\nline 2",
-        }
+        },
+        {
+            "path": "foo/blah.pdf",
+            "page": 2,
+            "folder": "foo",
+            "text": "Page two\nLine 2 of page 2",
+        },
+        {"path": "foo/blah.pdf", "page": 3, "folder": "foo", "text": ""},
     ]
     assert list(db["ocr_jobs"].rows) == [
         {
@@ -234,6 +241,26 @@ def populate_ocr_results(s3, multi_page=False):
                                 "Text": "Line 2 of page 2",
                                 "BlockType": "LINE",
                                 "Page": 2,
+                            },
+                            # Page3 is blank
+                            {
+                                "BlockType": "PAGE",
+                                "ColumnIndex": None,
+                                "ColumnSpan": None,
+                                "Confidence": None,
+                                "DocumentType": None,
+                                "EntityTypes": None,
+                                "Geometry": {},
+                                "Hint": None,
+                                "Id": "3444df06-df9a-4c0a-93b0-132ae48a9680",
+                                "Page": 3,
+                                "Query": None,
+                                "Relationships": None,
+                                "RowIndex": None,
+                                "RowSpan": None,
+                                "SelectionStatus": None,
+                                "Text": None,
+                                "TextType": None,
                             },
                         ]
                         if multi_page

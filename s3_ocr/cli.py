@@ -530,13 +530,29 @@ def index(bucket, database, **boto_options):
                         pages[page] = []
                     pages[page].append(block["Text"])
             # And insert those into the database
+            folder = "/".join(path.split("/")[:-1])
             for page_number, lines in pages.items():
                 db["pages"].insert(
                     {
                         "path": path,
                         "page": page_number,
-                        "folder": "/".join(path.split("/")[:-1]),
+                        "folder": folder,
                         "text": "\n".join(lines),
+                    },
+                    replace=True,
+                )
+            # Add a blank record for every page that is missing
+            all_page_numbers = [
+                block["Page"] for block in blocks if block["BlockType"] == "PAGE"
+            ]
+            missing = [pn for pn in all_page_numbers if pn not in pages.keys()]
+            for number in missing:
+                db["pages"].insert(
+                    {
+                        "path": path,
+                        "page": number,
+                        "folder": folder,
+                        "text": "",
                     },
                     replace=True,
                 )
