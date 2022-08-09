@@ -88,7 +88,13 @@ def make_client(
 @click.group()
 @click.version_option()
 def cli():
-    "Tools for running OCR against files stored in S3"
+    """
+    Tools for running OCR against files stored in S3
+
+    Docs: https://github.com/simonw/s3-ocr/blob/main/README.md
+
+    Changelog: https://github.com/simonw/s3-ocr/releases
+    """
 
 
 @cli.command
